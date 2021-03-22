@@ -60,10 +60,11 @@ def get_trend(tr_dict, return_fitted=False):
     if return_fitted:
         res_dict = OrderedDict()
     for patient, values in tr_dict.items():
-        fitted = Holt(values).fit(optimized=True)  # type: HoltWintersResults
-        trend_dict[patient] = fitted.predict()
+        fitted = Holt(values, damped_trend=True).fit(optimized=True, smoothing_level=0.7)  # type: HoltWintersResults
+        trend_dict[patient] = fitted.predict(start=0, end=len(values)-1)
         if return_fitted:
             res_dict[patient] = fitted.summary()
+
     return trend_dict, res_dict
 
 
@@ -84,7 +85,6 @@ def f_norm_naive_sys(tr):
     :param tr:
     :return:
     """
-    tr = de_norm(tr, criteria='P_sys_q0.5')
     mask_hyper = (tr > 180)
     mask_hypo = (tr < 90) * -1
     mask = mask_hyper + mask_hypo
@@ -129,7 +129,7 @@ def get_g_norm(val_dict, holt_dict):
     :param holt_dict: the dict of value of the holt prediction
     :return: a dict of distance between the trajectory to holt
     """
-    return {np.abs(val_dict[patient] - holt_dict[patient]) for patient in val_dict.keys()}
+    return {patient: np.abs(val_dict[patient] - holt_dict[patient]) for patient in val_dict.keys()}
 
 
 def get_max_distance(distance_dict):
@@ -182,4 +182,4 @@ def mean_metric_score(metric_dict):
     :param metric_dict: a metric score, per patient 
     :return: 
     """
-    return np.mean(v for v in metric_dict.values())
+    return np.mean([v for v in metric_dict.values()])
