@@ -65,17 +65,20 @@ class VSG:
                              (self.df_a['ts'].between(e_ts - self.t_before, e_ts + self.t_after))].index.tolist()
         return temp
 
-    def take_next_candidate(self, current_events, possible_candidates, f_candidates=False):
+    def take_next_candidate(self, current_events, possible_candidates, f_candidates=False, num_candidates=None):
         """
         to document - complex!
 
         :param current_events:
         :param possible_candidates:
         :param f_candidates:
+        :param num_candidates:
         :return:
         """
         extended = self.extend_trajectory(current_events)
         temp_c = self.candidates
+        if num_candidates is not None:
+            temp_c = num_candidates
         candidates = []
         idx = 0
         while temp_c > 0:
@@ -150,6 +153,22 @@ class VSG:
             vf.append(e)
         self._tf = self.events_to_dict(tf)
         self._tg = self.events_to_dict(tg)
+
+    def get_random_sample(self, n_rand):
+        t_rand = []
+        l_rand = self._get_random_list()
+        while len(t_rand) < n_rand:
+            if len(t_rand) == 0:
+                e = l_rand.pop(0)
+            else:
+                e = self.take_next_candidate(t_rand, l_rand, num_candidates=1)[0]
+                l_rand.pop(l_rand.index(e))
+            t_rand.append(e)
+        t_dict = self.events_to_dict(t_rand)
+        return self._return_format(t_dict)
+
+    def _get_random_list(self):
+        return self.df_a.sample(frac=1).index.tolist()
 
     @staticmethod
     def create_f_df(f_norm_dict, val_type):

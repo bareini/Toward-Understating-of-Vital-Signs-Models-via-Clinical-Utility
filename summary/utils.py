@@ -1,6 +1,6 @@
 import os
 from collections import OrderedDict
-from pathlib import Path
+import matplotlib.pyplot as plt
 
 import numpy as np
 import pandas as pd
@@ -183,3 +183,61 @@ def mean_metric_score(metric_dict):
     :return: 
     """
     return np.mean([v for v in metric_dict.values()])
+
+
+def plot_graphs(outputs, figs_loc, tr_dict, pred_tr_dict, label, pred_label, save=True, y_label=None, x_label=None):
+    """
+
+
+    :param x_label:
+    :param y_label:
+    :param dict outputs:
+    :param figs_loc:
+    :param tr_dict:
+    :param pred_tr_dict:
+    :param label:
+    :param pred_label:
+    :param save:
+    :return:
+    """
+    plt.close()
+    num_of_cols = len(outputs)
+    inner_size = len(list(outputs.values())[0])
+    num_of_rows = inner_size
+    fig, ax = plt.subplots(nrows=num_of_rows, ncols=num_of_cols, figsize=(20, 10), sharey=True)
+    for col, (name, values) in enumerate(outputs.items()):
+        print(f"Type: {name}")
+        for idx, patient in values.items():
+            # plt.close()
+            print(f"Sample #{idx}")
+            i = patient['patient']
+            locs = patient['ts']
+
+            tr_values = tr_dict[i][locs]
+            pred_values = pred_tr_dict[i][locs]
+
+            ax[idx, col].plot(locs, tr_values, label=label, color='red', marker='P', alpha=0.7)
+            ax[idx, col].plot(locs, pred_values, label=pred_label, marker='.', color='navy', alpha=0.7)
+            if idx == 0 and col == num_of_cols - 1:
+                ax[idx, col].legend(bbox_to_anchor=(1.05, 1), loc='upper left', prop={'size': 18, 'weight': 'bold'})
+            ax[idx, col].set_ylim([80., 200.])
+            ax[idx, col].set_yticks(np.arange(80, 200, 5), minor=True)
+            ax[idx, col].tick_params(axis='both', labelsize=16)
+            ax[idx, col].grid(b=True, color='black', linestyle='-', lw=0.15, which='major')
+            ax[idx, col].grid(b=True, color='black', alpha=0.5, linestyle='-', lw=0.1, which='minor')
+    fig.tight_layout()
+    fig.add_subplot(111, frameon=False)
+    # hide tick and tick label of the big axis
+    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+    plt.xlabel(x_label, fontdict={'size': 20, 'weight': 'bold'}, labelpad=20)
+    plt.ylabel(y_label, fontdict={'size': 20, 'weight': 'bold', 'rotation': 90}, labelpad=30)
+    # if y_label is not None:
+    #     fig.text(x=0, y=0.5, s=y_label, fontdict={'size': 18, 'weight': 'bold', 'rotation': 90},
+    #              va='center', rotation='vertical')
+    # if x_label is not None:
+    #     plt.xlabel(x_label, fontdict={'size': 18, 'weight': 'bold'})
+    # fig.supxlabel('A')
+    plt.tight_layout()
+    if save:
+        plt.savefig(os.path.join(figs_loc, f"{list(outputs.keys())}_plot.png"), dpi=400)
+    plt.show()

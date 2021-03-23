@@ -1,5 +1,5 @@
 import os
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import pickle as pkl
 
 import pandas as pd
@@ -62,30 +62,20 @@ outputs = {'tf': tf, 'tg': tg}
 
 figs_loc = os.path.join(base_dir, "figs")
 
-for name, values in outputs.items():
-    print(f"Type: {name}")
-    for idx, patient in values.items():
-        plt.close()
-        print(f"Sample #{idx}")
-        i = patient['patient']
-        locs = patient['ts']
-        # def graph()
-        s_test = tr_dict[i][locs]
-        pred_ridge = pred_tr_dict_ridge[i][locs]
-        pred_xgb = pred_tr_dict_xgb[i][locs]
-        pred_holt = trends_dict_new[i][locs]
-        # delta = abs(s_test - pred_ridge)
-        # sns.set(font_scale=1.5)
+utils.plot_graphs(outputs, figs_loc, tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model', save=True,
+                  y_label='Systolic Blood Pressure', x_label='Time Stamp'
+                  )
+rand_dict = vsg.get_random_sample(8)
+full_length = len(rand_dict) / 2
 
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(locs, s_test, label="bp", color='red', marker='P')
-        ax.plot(locs, pred_ridge, label="Ridge", marker='.')
-        ax.plot(locs, pred_xgb, label="XGB", marker='s')
-        ax.plot(locs, pred_holt, label="Holt", marker='X')
+temp_rand_dict = defaultdict(dict)
+for idx, val in rand_dict.items():
+    label = 'Random'
+    if idx >= full_length:
+        label = 'Random2'
+    index = int(idx % full_length)
+    temp_rand_dict[label].update({index: val})
 
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', prop={'size': 12})
-
-        ax.set_title(f"Patient {i}")
-        fig.tight_layout()
-        plt.savefig(os.path.join(figs_loc, f"{name}_{idx}_plot.png"), dpi=400)
-        plt.show()
+utils.plot_graphs(dict(temp_rand_dict), figs_loc, tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model', save=True,
+                  y_label='Systolic Blood Pressure', x_label='Time Stamp'
+                  )
