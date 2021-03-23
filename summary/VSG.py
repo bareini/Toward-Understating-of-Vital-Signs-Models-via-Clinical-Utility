@@ -24,10 +24,24 @@ class VSG:
         self.tf_plus = self.n_f / 2
         self.tf_minus = self.n_f - self.tf_plus
 
-        self.tf = {}
-        self.vg = {}
-        self.tg = {}
-        self.vf = {}
+        self._tf = {}
+        self._tg = {}
+
+    @property
+    def tf(self):
+        return self._return_format(self._tf)
+
+    @property
+    def tg(self):
+        return self._return_format(self._tg)
+
+    def _return_format(self, ret_dict):
+        return {
+            idx: {
+                'patient': self.df_a.loc[events[0], 'patient'],
+                'ts': self.df_a.loc[events, 'ts'].values}
+            for idx, events in ret_dict.items()
+        }
 
     def sorted_metrics(self, value):
         return self.df_a[f'{value}_value'].abs().sort_values(ascending=False).index.tolist()
@@ -83,7 +97,8 @@ class VSG:
             idx += 1
         return candidates
 
-    def get_diversified(self, candidates, current_events, other_value):
+    def get_diversified(self, candidates, current_events, val_name):
+        other_value = f'{val_name}_value'
         current_mean = self.df_a.loc[current_events, other_value].mean()
         chosen = None
         best_val = 0
@@ -133,8 +148,8 @@ class VSG:
                 self.g_sorted_idx.pop(self.g_sorted_idx.index(e))
             tg.append(e)
             vf.append(e)
-        self.tf = self.events_to_dict(tf)
-        self.tg = self.events_to_dict(tg)
+        self._tf = self.events_to_dict(tf)
+        self._tg = self.events_to_dict(tg)
 
     @staticmethod
     def create_f_df(f_norm_dict, val_type):
@@ -163,6 +178,9 @@ class VSG:
         :return:
         """
         df_f = VSG.create_f_df(f_norm_dict, val_type='f')
+        df_f['old_f_val'] = df_f['f_value']
+        df_f_temp = df_f.sort_values(['patient', 'ts']).groupby(['patient'])['f_value'].diff().fillna(0)
+        df_f.loc[df_f_temp.index, 'f_value'] = df_f_temp
         df_g = VSG.create_f_df(g_norm_dict, val_type='g')
-        df_a = pd.merge(df_f, df_g, how='internal', on=['patient', 'ts'])
+        df_a = pd.merge(df_f, df_g, how='inner', on=['patient', 'ts'])
         return df_a
