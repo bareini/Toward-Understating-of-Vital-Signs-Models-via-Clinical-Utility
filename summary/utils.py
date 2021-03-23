@@ -142,18 +142,20 @@ def get_max_distance(distance_dict):
     return max(np.hstack(values for values in distance_dict.values()))
 
 
-def get_weights(distance_dict):
+def get_weights(distance_dict, normalized=True):
     """
     given a dict of distances, normalized them to a weight using the max distance
 
     :param distance_dict: a dict of the distances between holt pred to trajectory of choice
+    :param distance_dict: a dict of the distances between holt pred to trajectory of choice
     :return: for each patient a weight based on the normalized distance
     """
     u_max = get_max_distance(distance_dict)
-    return {k: v/u_max for k, v in distance_dict.items()}
+    return {k: v/u_max for k, v in distance_dict.items()} if normalized else {k: v for k, v in distance_dict.items()}
 
+# todo: fix to not just consider mean per patient
 
-def w_trend(y_true_dict, y_pred_dict, g_true_dict, g_pred_dict):
+def w_trend(y_true_dict, y_pred_dict, g_true_dict, g_pred_dict, return_true=False, mode='mean_raw'):
     """
     calculate for each patient his w_trend value, as the error ( |y_t - y_t^hat|) weighted by the distance from holt
     trend.
@@ -162,24 +164,36 @@ def w_trend(y_true_dict, y_pred_dict, g_true_dict, g_pred_dict):
     :param y_pred_dict: dict of y_t^hat values per patient
     :param g_true_dict: dict of the distances between holt pred to y_t
     :param g_pred_dict: dict of the distances between holt pred to y_t_pred
+    :param return_true: bool, a flag whether to calculate w_true
+    :param mode: str, mode of the returned value. possible values are --'mean_raw': unnormalized score /
+    mean_norm': mean score normalized /'deviaions': 75th qnt of normalized score
+
     :return: a dict with w_trend score per patient trajectory, one for y_t and y_t^hat
     """
     w_true = {}
     w_pred = {}
-    weights_true_dict = get_weights(g_true_dict)
-    weights_pred_dict = get_weights(g_pred_dict)
+    norm = 'mean_raw' != mode
+    weights_true_dict = get_weights(g_true_dict, norm)
+    weights_pred_dict = get_weights(g_pred_dict, norm)
     for patient, weight_true in weights_true_dict.items():
         distance = np.abs(y_true_dict[patient] - y_pred_dict[patient])
-        w_true[patient] = np.mean(distance * weight_true)
-        w_pred[patient] = np.mean(distance * weights_pred_dict[patient])
-    return w_true, w_pred
+        w_pred[patient] = np.quantile(distance * weights_pred_dict[patient], 0.95, axis=0) if mode == 'deviaions' else \
+            np.mean(distance * weights_pred_dict[patient])
+        if return_true:
+            w_true[patient] = np.quantile(distance * weights_true_dict[patient], 0.95, axis=0) if mode == 'deviaions' \
+                else np.mean(distance * weights_true_dict[patient])
+
+    return w_true, w_pred if return_true else w_pred
 
 
-def mean_metric_score(metric_dict):
+
+def mean_metric_score(metric_dict, mode='mean'):
     """
     given a dict with scores per patient, return the mean value
     
-    :param metric_dict: a metric score, per patient 
+    :param metric_dict: a metric score, per patient
+    :param mode: str, mode of the returned value. possible values are --'mean'/' deviaions' (75th qnt)
+
     :return: 
     """
-    return np.mean([v for v in metric_dict.values()])
+    return np.mean([v for v in metric_dict.values()]) if mode == 'mean' else np.quantile([v for v in metric_dict.values()], 0.95)
