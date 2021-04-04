@@ -3,6 +3,8 @@
 
 # Toward Understating of Vital Signs Models via Clinical Utility
 
+Project by Bar Eini-Porat and Rom Gutman
+
 In acute medical settings, vital signs are gathered routinely to monitor patients’ condition.
 These signals are often the first indication for various critical events. For this reason, many
 works in the field of Machine Learning (ML) engage in the prediction on such physiological
@@ -16,3 +18,4 @@ To generate a comprehensive behavioral report, we formulate performance measures
 
 ## Visual Summary
 Inspired by (Amir and Amir, 2018), we explore the contribution of visual summaries of time series models’ to the understanding their behavior.
+
