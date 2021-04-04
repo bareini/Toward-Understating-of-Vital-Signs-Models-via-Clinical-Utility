@@ -153,7 +153,6 @@ def get_weights(distance_dict, normalized=True):
     u_max = get_max_distance(distance_dict)
     return {k: v/u_max for k, v in distance_dict.items()} if normalized else {k: v for k, v in distance_dict.items()}
 
-# todo: fix to not just consider mean per patient
 
 def w_trend(y_true_dict, y_pred_dict, g_true_dict, g_pred_dict, return_true=False, mode='mean_raw'):
     """
@@ -186,7 +185,6 @@ def w_trend(y_true_dict, y_pred_dict, g_true_dict, g_pred_dict, return_true=Fals
     return w_true, w_pred if return_true else w_pred
 
 
-
 def mean_metric_score(metric_dict, mode='mean'):
     """
     given a dict with scores per patient, return the mean value
@@ -199,26 +197,32 @@ def mean_metric_score(metric_dict, mode='mean'):
     return np.mean([v for v in metric_dict.values()]) if mode == 'mean' else np.quantile([v for v in metric_dict.values()], 0.95)
 
 
-def plot_graphs(outputs, figs_loc, tr_dict, pred_tr_dict, label, pred_label, save=True, y_label=None, x_label=None):
+def plot_graphs(outputs, tr_dict, pred_tr_dict, label, pred_label, figs_loc=None, y_label=None, x_label=None,
+                threshold=20.):
     """
+    method for creating the visual summary report. Each graph has y axis limit of ± threshold (default value is 20).
 
-
-    :param x_label:
-    :param y_label:
     :param dict outputs:
-    :param figs_loc:
-    :param tr_dict:
-    :param pred_tr_dict:
-    :param label:
-    :param pred_label:
-    :param save:
+        Dictionary with the samples for the report. for each event it has a dict of patient id and time stamps.
+    :param dict tr_dict:
+        Dictionary which contains for each patient (key)
+        a list of the true trajectory values indexed by timestamp (value).
+    :param dict pred_tr_dict:
+        Dictionary which contains for each patient (key)
+         a list of the predicted trajectory values indexed by timestamp (value).
+    :param str label: the trajectory name to print on the legend.
+    :param str pred_label: The legend label of the predicted model.
+    :param figs_loc: optional. If the user wishes to save the figs, it uses this dir.
+    :param str x_label: optional. X label of the entire graph.
+    :param str y_label: optional. Y label of the entire graph.
+    :param float threshold: the threshold around the y axis. defalut value is 20.
     :return:
     """
     plt.close()
     num_of_cols = len(outputs)
     inner_size = len(list(outputs.values())[0])
     num_of_rows = inner_size
-    fig, ax = plt.subplots(nrows=num_of_rows, ncols=num_of_cols, figsize=(20, 10), sharey=True)
+    fig, ax = plt.subplots(nrows=num_of_rows, ncols=num_of_cols, figsize=(20, 10))
     for col, (name, values) in enumerate(outputs.items()):
         print(f"Type: {name}")
         for idx, patient in values.items():
@@ -234,24 +238,24 @@ def plot_graphs(outputs, figs_loc, tr_dict, pred_tr_dict, label, pred_label, sav
             ax[idx, col].plot(locs, pred_values, label=pred_label, marker='.', color='navy', alpha=0.7)
             if idx == 0 and col == num_of_cols - 1:
                 ax[idx, col].legend(bbox_to_anchor=(1.05, 1), loc='upper left', prop={'size': 18, 'weight': 'bold'})
-            ax[idx, col].set_ylim([80., 200.])
-            ax[idx, col].set_yticks(np.arange(80, 200, 5), minor=True)
+            min_val = np.round(min(np.min(tr_values), np.min(pred_values)) - threshold, 0)
+            max_val = np.round(max(np.max(tr_values), np.max(pred_values)) + threshold, 0)
+            ax[idx, col].set_ylim([min_val, max_val])
+            ax[idx, col].set_yticks(np.arange(min_val, max_val, 5), minor=True)
+            ax[idx, col].set_yticks(np.arange(min_val, max_val, 20), minor=False)
             ax[idx, col].tick_params(axis='both', labelsize=16)
             ax[idx, col].grid(b=True, color='black', linestyle='-', lw=0.15, which='major')
             ax[idx, col].grid(b=True, color='black', alpha=0.5, linestyle='-', lw=0.1, which='minor')
     fig.tight_layout()
-    fig.add_subplot(111, frameon=False)
-    # hide tick and tick label of the big axis
-    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-    plt.xlabel(x_label, fontdict={'size': 20, 'weight': 'bold'}, labelpad=20)
-    plt.ylabel(y_label, fontdict={'size': 20, 'weight': 'bold', 'rotation': 90}, labelpad=30)
-    # if y_label is not None:
-    #     fig.text(x=0, y=0.5, s=y_label, fontdict={'size': 18, 'weight': 'bold', 'rotation': 90},
-    #              va='center', rotation='vertical')
-    # if x_label is not None:
-    #     plt.xlabel(x_label, fontdict={'size': 18, 'weight': 'bold'})
-    # fig.supxlabel('A')
+    if y_label is not None or x_label is not None:
+        fig.add_subplot(111, frameon=False)
+        # hide tick and tick label of the big axis
+        plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+        if y_label is not None:
+            plt.xlabel(x_label, fontdict={'size': 20, 'weight': 'bold'}, labelpad=20)
+        if x_label is not None:
+            plt.ylabel(y_label, fontdict={'size': 20, 'weight': 'bold', 'rotation': 90}, labelpad=30)
     plt.tight_layout()
-    if save:
+    if figs_loc is not None:
         plt.savefig(os.path.join(figs_loc, f"{list(outputs.keys())}_plot.png"), dpi=400)
     plt.show()

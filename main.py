@@ -62,7 +62,7 @@ outputs = {'tf': tf, 'tg': tg}
 
 figs_loc = os.path.join(base_dir, "figs")
 
-utils.plot_graphs(outputs, figs_loc, tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model', save=True,
+utils.plot_graphs(outputs, tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model', figs_loc=figs_loc,
                   y_label='Systolic Blood Pressure', x_label='Time Stamp'
                   )
 rand_dict = vsg.get_random_sample(8)
@@ -76,6 +76,6 @@ for idx, val in rand_dict.items():
     index = int(idx % full_length)
     temp_rand_dict[label].update({index: val})
 
-utils.plot_graphs(dict(temp_rand_dict), figs_loc, tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model', save=True,
-                  y_label='Systolic Blood Pressure', x_label='Time Stamp'
+utils.plot_graphs(dict(temp_rand_dict), tr_dict, pred_tr_dict_ridge, label='Sys BP', pred_label='Model',
+                  figs_loc=figs_loc, y_label='Systolic Blood Pressure', x_label='Time Stamp'
                   )
