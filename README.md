@@ -1,6 +1,7 @@
-# Toward Understating of Vital Signs Models via Clinical Utility
+<img align="right" width="100" height="100" src="noun_Heart_177835.png">
 
-<img align="left" width="400" height="400" src="noun_Heart_177835.png">
+
+# Toward Understating of Vital Signs Models via Clinical Utility
 
 In acute medical settings, vital signs are gathered routinely to monitor patients’ condition.
 These signals are often the first indication for various critical events. For this reason, many
