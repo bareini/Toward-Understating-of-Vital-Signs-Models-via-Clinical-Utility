@@ -1,5 +1,7 @@
 # Toward Understating of Vital Signs Models via Clinical Utility
 
+<img align="left" width="400" height="400" src="noun_Heart_177835.png">
+
 In acute medical settings, vital signs are gathered routinely to monitor patients’ condition.
 These signals are often the first indication for various critical events. For this reason, many
 works in the field of Machine Learning (ML) engage in the prediction on such physiological
